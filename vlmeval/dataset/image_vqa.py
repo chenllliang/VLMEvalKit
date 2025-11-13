@@ -3741,10 +3741,17 @@ class BabyVision(ImageVQADataset):
             line = self.data.iloc[line]
         tgt_path=self.dump_image(line)
 
-        question=line['question']
+        Option_list=['A','B','C','D','E','F','G','H','I','J']
+
         prompt=''
-        prompt+=question
-        # prompt+='\n'
+
+        question=line['question']
+        anstype=line['ansType']
+        if anstype=='choice' and 'option' in line:
+            options_text='\n'.join([f"{Option_list[i]}. {opt}" for i, opt in enumerate(line['option'])])
+            question=f"{question}\nPlease select the correct answer from the following options:\n{options_text}\nAnswer with the option's letter from the given choices directly."
+        
+        prompt=f"{question}\n\nPlease provide your answer in the following format: Answer: \\boxed{{your answer here}}"
 
         msgs = []
         if isinstance(tgt_path, list):
