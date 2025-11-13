@@ -3767,10 +3767,7 @@ class BabyVision(ImageVQADataset):
         from .utils.babyvision import BabyVisionACC, BabyVision_auxeval
 
         model_name = judge_kwargs.get('model')
-        assert model_name in ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model_name
-
-        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
-        name_str = name_str_map[model_name] if model_name in name_str_map else model_name
+        name_str = model_name
 
         judge_model = build_judge(**judge_kwargs)
 
