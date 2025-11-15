@@ -627,6 +627,8 @@ class MathVision(ImageBaseDataset):
             data['log'] = [ans[idx]['log'] for idx in data['index']]
             dump(data, storage)
 
+        import pdb; pdb.set_trace()
+
         score = MATH_V_acc(storage)
         score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
@@ -3727,48 +3729,31 @@ class MathCanvas(ImageBaseDataset):
 
         return summary_dict
 
-class BabyVision(ImageVQADataset):
+
+
+class BabyVision1114(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        "BabyVision": ""
+        'BabyVision1114':
+        'https://opencompass.openxlab.space/utils/VLMEval/BabyVision1114.tsv',
     }
     DATASET_MD5 = {
-        "BabyVision": ""
+        'BabyVision1114': 'fb0bc5526f41c314de394c4e1770ed96',
     }
-    
+
     def build_prompt(self, line):
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-        tgt_path=self.dump_image(line)
-
-        Option_list=['A','B','C','D','E','F','G','H','I','J']
-
-        prompt=''
-
-        question=line['question']
-        anstype=line['ansType']
-        if anstype=='choice' and 'option' in line:
-            options_text='\n'.join([f"{Option_list[i]}. {opt}" for i, opt in enumerate(line['option'])])
-            question=f"{question}\nPlease select the correct answer from the following options:\n{options_text}\nAnswer with the option's letter from the given choices directly."
-        
-        prompt=f"{question}\n\nPlease provide your answer in the following format: Answer: \\boxed{{your answer here}}"
-
-        msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
-        else:
-            msgs = [dict(type='image', value=tgt_path)]
-        msgs.append(dict(type='text', value=prompt))
-
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1][
+            'value'] += f'\nProvide your answer in the following format: \\boxed{{your answer here}}'
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.babyvision import llm_judge_prompt, INPUT_TEMPLATE
-        from .utils.babyvision import BabyVisionACC, BabyVision_auxeval
+        from .utils.babyvision1114 import llm_judge_prompt, INPUT_TEMPLATE
+        from .utils.babyvision1114 import BabyVisionACC, BabyVision_auxeval
 
         model_name = judge_kwargs.get('model')
-        name_str = model_name
-
+        
         judge_model = build_judge(**judge_kwargs)
 
         if not judge_model.working():
@@ -3777,8 +3762,8 @@ class BabyVision(ImageVQADataset):
         assert judge_model.working(), 'BabyVision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
         suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
+        storage = eval_file.replace(f'.{suffix}', f'_{model_name}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model_name}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         data = load(eval_file)
